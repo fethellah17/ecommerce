@@ -1,0 +1,198 @@
+{% extends 'store/main.html' %}
+{% load static %}
+{% block content %}
+
+<div class="checkout-container">
+    <h2 class="checkout-title">Checkout</h2>
+    
+    <div class="checkout-content">
+        <div class="checkout-form-section">
+            <h3>Shipping Information</h3>
+            <form method="POST" class="shipping-form">
+                {% csrf_token %}
+                <div class="form-row">
+                    <div class="form-group full-width">
+                        <label for="id_phone">Phone Number</label>
+                        {{ form.phone }}
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="id_state">Wilaya (State)</label>
+                        {{ form.state }}
+                    </div>
+                    <div class="form-group">
+                        <label for="id_city">Municipality (Commune)</label>
+                        {{ form.city }}
+                    </div>
+                </div>
+                
+                <h3 class="mt-4">Payment Method</h3>
+                <div class="payment-info">
+                    <div class="cash-payment">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M1 3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1H1zm7 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>
+                            <path d="M0 5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1V5zm3 0a2 2 0 0 1-2 2v4a2 2 0 0 1 2 2h10a2 2 0 0 1 2-2V7a2 2 0 0 1-2-2H3z"/>
+                        </svg>
+                        <div>
+                            <strong>Cash on Delivery</strong>
+                            <p>Pay when you receive your order</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn-place-order">Place Order</button>
+            </form>
+        </div>
+        
+        <div class="order-summary-section">
+            <h3>Order Summary</h3>
+            <div class="order-items">
+                {% for item in items %}
+                <div class="order-item">
+                    <img src="{{ item.product.imageURL }}" alt="{{ item.product.name }}">
+                    <div class="order-item-info">
+                        <span class="item-name">{{ item.product.name }}</span>
+                        <span class="item-qty">Qty: {{ item.quantity }}</span>
+                    </div>
+                    <span class="item-price">{{ item.get_total }} DA</span>
+                </div>
+                {% endfor %}
+            </div>
+            <hr>
+            <div class="summary-totals">
+                <div class="summary-line">
+                    <span>Subtotal</span>
+                    <span id="subtotal">{{ order.get_cart_total }} DA</span>
+                </div>
+                <div class="summary-line">
+                    <span>Delivery</span>
+                    <span id="shipping">Select wilaya</span>
+                </div>
+                <div class="summary-line total">
+                    <span>Total</span>
+                    <span id="total">{{ order.get_cart_total }} DA</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const municipalities = {
+    '01': ['Adrar', 'Reggane', 'Aoulef', 'Timimoun', 'Zaouiet Kounta'],
+    '02': ['Chlef', 'Ténès', 'El Karimia', 'Oued Fodda', 'Boukadir'],
+    '03': ['Laghouat', 'Aflou', 'Ksar El Hirane', 'Hassi R\'Mel'],
+    '04': ['Oum El Bouaghi', 'Aïn Beïda', 'Aïn M\'lila', 'Sigus'],
+    '05': ['Batna', 'Barika', 'Aïn Touta', 'N\'Gaous', 'Merouana'],
+    '06': ['Béjaïa', 'Akbou', 'El Kseur', 'Sidi Aïch', 'Kherrata'],
+    '07': ['Biskra', 'Tolga', 'Ouled Djellal', 'Sidi Okba', 'El Kantara'],
+    '08': ['Béchar', 'Kenadsa', 'Abadla', 'Beni Ounif'],
+    '09': ['Blida', 'Boufarik', 'El Affroun', 'Mouzaïa', 'Oued El Alleug'],
+    '10': ['Bouira', 'Lakhdaria', 'Sour El Ghozlane', 'M\'Chedallah'],
+    '11': ['Tamanrasset', 'In Salah', 'In Guezzam', 'Abalessa'],
+    '12': ['Tébessa', 'Bir El Ater', 'Cheria', 'El Aouinet', 'Ouenza'],
+    '13': ['Tlemcen', 'Maghnia', 'Ghazaouet', 'Remchi', 'Nedroma'],
+    '14': ['Tiaret', 'Frenda', 'Sougueur', 'Mahdia', 'Ksar Chellala'],
+    '15': ['Tizi Ouzou', 'Azazga', 'Draâ El Mizan', 'Larbaâ Nath Irathen', 'Aïn El Hammam'],
+    '16': ['Alger Centre', 'Bab El Oued', 'Hussein Dey', 'El Harrach', 'Bir Mourad Raïs', 'Kouba', 'Hydra', 'Dély Ibrahim', 'Chéraga', 'Draria', 'Bab Ezzouar', 'Dar El Beïda', 'Rouiba', 'Reghaia'],
+    '17': ['Djelfa', 'Messaad', 'Aïn Oussera', 'Hassi Bahbah'],
+    '18': ['Jijel', 'El Milia', 'Taher', 'Chekfa', 'Ziama Mansouriah'],
+    '19': ['Sétif', 'El Eulma', 'Aïn Oulmene', 'Bougaa', 'Aïn Arnat'],
+    '20': ['Saïda', 'Aïn El Hadjar', 'Youb', 'El Hassasna'],
+    '21': ['Skikda', 'Azzaba', 'El Harrouch', 'Collo', 'Tamalous'],
+    '22': ['Sidi Bel Abbès', 'Telagh', 'Aïn El Berd', 'Sfisef'],
+    '23': ['Annaba', 'El Bouni', 'El Hadjar', 'Berrahal', 'Seraïdi'],
+    '24': ['Guelma', 'Oued Zenati', 'Bouchegouf', 'Héliopolis'],
+    '25': ['Constantine', 'El Khroub', 'Aïn Smara', 'Hamma Bouziane', 'Didouche Mourad'],
+    '26': ['Médéa', 'Berrouaghia', 'Ksar El Boukhari', 'Tablat'],
+    '27': ['Mostaganem', 'Aïn Tédelès', 'Sidi Ali', 'Hassi Mameche'],
+    '28': ['M\'Sila', 'Bou Saâda', 'Sidi Aïssa', 'Aïn El Melh'],
+    '29': ['Mascara', 'Sig', 'Mohammadia', 'Tighennif', 'Ghriss'],
+    '30': ['Ouargla', 'Hassi Messaoud', 'Touggourt', 'Taibet'],
+    '31': ['Oran', 'Es Sénia', 'Bir El Djir', 'Aïn Turk', 'Arzew', 'Bethioua'],
+    '32': ['El Bayadh', 'Bougtob', 'El Abiodh Sidi Cheikh'],
+    '33': ['Illizi', 'Djanet', 'In Amenas', 'Bordj Omar Driss'],
+    '34': ['Bordj Bou Arréridj', 'Ras El Oued', 'Bir Kasdali', 'El Achir'],
+    '35': ['Boumerdès', 'Bordj Menaïel', 'Dellys', 'Khemis El Khechna', 'Thénia'],
+    '36': ['El Tarf', 'El Kala', 'Bouteldja', 'Ben M\'Hidi'],
+    '37': ['Tindouf'],
+    '38': ['Tissemsilt', 'Bordj Bou Naama', 'Theniet El Had', 'Lardjem'],
+    '39': ['El Oued', 'Guemar', 'Debila', 'Robbah', 'Bayadha'],
+    '40': ['Khenchela', 'Kaïs', 'Chechar', 'El Hamma'],
+    '41': ['Souk Ahras', 'Sedrata', 'M\'Daourouch', 'Taoura'],
+    '42': ['Tipaza', 'Cherchell', 'Koléa', 'Hadjout', 'Bou Ismaïl'],
+    '43': ['Mila', 'Chelghoum Laïd', 'Ferdjioua', 'Grarem Gouga'],
+    '44': ['Aïn Defla', 'Khemis Miliana', 'El Attaf', 'Miliana'],
+    '45': ['Naâma', 'Mécheria', 'Aïn Sefra', 'Moghrar'],
+    '46': ['Aïn Témouchent', 'El Malah', 'Hammam Bou Hadjar', 'Beni Saf'],
+    '47': ['Ghardaïa', 'Metlili', 'Berriane', 'El Guerrara'],
+    '48': ['Relizane', 'Oued Rhiou', 'Mazouna', 'Mendes'],
+    '49': ['El M\'Ghair', 'Djamaa', 'Sidi Khellil'],
+    '50': ['El Meniaa', 'Hassi Gara'],
+    '51': ['Ouled Djellal', 'Sidi Khaled', 'Doucen'],
+    '52': ['Bordj Badji Mokhtar', 'Timiaouine'],
+    '53': ['Béni Abbès', 'El Ouata', 'Igli'],
+    '54': ['Timimoun', 'Charouine', 'Ouled Saïd'],
+    '55': ['Touggourt', 'Temacine', 'Megarine'],
+    '56': ['Djanet', 'Bordj El Haouès'],
+    '57': ['In Salah', 'In Ghar', 'Foggaret Ezzaouia'],
+    '58': ['In Guezzam', 'Tin Zaouatine'],
+};
+
+const deliveryPrices = {
+    '01': 1200, '02': 600, '03': 900, '04': 700, '05': 700,
+    '06': 600, '07': 800, '08': 1100, '09': 400, '10': 500,
+    '11': 1200, '12': 800, '13': 800, '14': 700, '15': 500,
+    '16': 400, '17': 800, '18': 600, '19': 600, '20': 800,
+    '21': 700, '22': 800, '23': 700, '24': 700, '25': 600,
+    '26': 500, '27': 700, '28': 700, '29': 700, '30': 1000,
+    '31': 700, '32': 1000, '33': 1200, '34': 600, '35': 400,
+    '36': 800, '37': 1200, '38': 700, '39': 900, '40': 800,
+    '41': 800, '42': 400, '43': 600, '44': 500, '45': 1000,
+    '46': 800, '47': 1000, '48': 700, '49': 1000, '50': 1100,
+    '51': 900, '52': 1200, '53': 1100, '54': 1100, '55': 900,
+    '56': 1200, '57': 1200, '58': 1200
+};
+
+const subtotal = Number("{{ order.get_cart_total }}");
+
+document.addEventListener('DOMContentLoaded', function() {
+    const stateSelect = document.getElementById('id_state');
+    const citySelect = document.getElementById('id_city');
+    const shippingEl = document.getElementById('shipping');
+    const totalEl = document.getElementById('total');
+    
+    function updateTotals() {
+        const wilayaCode = stateSelect.value;
+        if (wilayaCode && deliveryPrices[wilayaCode]) {
+            const shipping = deliveryPrices[wilayaCode];
+            shippingEl.textContent = shipping + ' DA';
+            totalEl.textContent = (subtotal + shipping) + ' DA';
+        } else {
+            shippingEl.textContent = 'Select wilaya';
+            totalEl.textContent = subtotal + ' DA';
+        }
+    }
+    
+    if (stateSelect && citySelect) {
+        stateSelect.addEventListener('change', function() {
+            const wilayaCode = this.value;
+            citySelect.innerHTML = '<option value="">Select Municipality</option>';
+            
+            if (wilayaCode && municipalities[wilayaCode]) {
+                municipalities[wilayaCode].forEach(function(commune) {
+                    const option = document.createElement('option');
+                    option.value = commune;
+                    option.textContent = commune;
+                    citySelect.appendChild(option);
+                });
+            }
+            
+            updateTotals();
+        });
+    }
+});
+</script>
+
+{% endblock content %}

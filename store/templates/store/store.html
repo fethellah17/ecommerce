@@ -1,0 +1,99 @@
+{% extends 'store/main.html' %}
+{% load static %}
+{% block content %}
+
+<div class="store-header">
+    <h2>ALL PRODUCTS</h2>
+    <div class="category-filters">
+        <a href="{% url 'store' %}" class="filter-btn {% if not request.GET.category and not request.GET.sale %}active{% endif %}">All</a>
+        <a href="?sale=true" class="filter-btn {% if request.GET.sale == 'true' %}active{% endif %}">Sale</a>
+        {% for category in categories %}
+        <a href="?category={{ category.id }}" class="filter-btn {% if request.GET.category == category.id|stringformat:'d' %}active{% endif %}">{{ category.name }}</a>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="products-grid">
+    {% for product in products %}
+    <div class="product-card">
+        <a href="{% url 'product_detail' product.id %}" class="product-image-wrapper">
+            <img src="{{ product.imageURL }}" alt="{{ product.name }}" class="product-image">
+            <button class="wishlist-btn {% if product.id in wishlist_items %}wishlist-active{% endif %}" data-product="{{ product.id }}" onclick="toggleWishlist(event, '{{ product.id }}');">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" class="{% if product.id in wishlist_items %}wishlist-active{% endif %}">
+                    <path fill-rule="evenodd" d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314z"/>
+                </svg>
+            </button>
+            {% if product.is_sale %}
+            <span class="sale-badge">SALE</span>
+            {% endif %}
+        </a>
+        <div class="product-info">
+            <a href="{% url 'product_detail' product.id %}" class="product-name-link">
+                <h3 class="product-name">{{ product.name }}</h3>
+            </a>
+            <div class="product-price">
+                {% if product.is_sale and product.sale_price %}
+                <span class="original-price">{{ product.price }} DA</span>
+                <span class="sale-price">{{ product.sale_price }} DA</span>
+                {% else %}
+                <span>{{ product.price }} DA</span>
+                {% endif %}
+            </div>
+            <div class="add-cart-form">
+                {% if request.user.is_authenticated %}
+                    <a href="{% url 'product_detail' product.id %}" class="btn-add-cart">Buy</a>
+                {% else %}
+                    <a href="{% url 'login' %}" class="btn-add-cart">Login to Buy</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <p class="no-products">No products available.</p>
+    {% endfor %}
+</div>
+
+<script>
+function toggleWishlist(event, productId) {
+    event.preventDefault();
+    
+    const button = event.currentTarget;
+    const svg = button.querySelector('svg');
+    
+    fetch("{% url 'toggle_wishlist' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': '{{ csrf_token }}',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: `product_id=${productId}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (data.is_in_wishlist) {
+                svg.classList.add('wishlist-active');
+                button.classList.add('wishlist-active');
+            } else {
+                svg.classList.remove('wishlist-active');
+                button.classList.remove('wishlist-active');
+            }
+            
+            // Update wishlist count in navbar
+            const wishlistTotal = document.getElementById('wishlist-total');
+            if (wishlistTotal) {
+                let currentCount = parseInt(wishlistTotal.textContent) || 0;
+                wishlistTotal.textContent = data.is_in_wishlist ? currentCount + 1 : Math.max(0, currentCount - 1);
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        // If there's an error (like user not authenticated), redirect to login
+        window.location.href = "{% url 'login' %}";
+    });
+}
+</script>
+
+{% endblock content %}
