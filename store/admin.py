@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Product, Category, Order, OrderItem, ShippingAddress, Wishlist
+from .models import Product, Category, ShippingAddress, Wishlist
 
 
 @admin.register(Category)
