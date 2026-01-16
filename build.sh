@@ -6,5 +6,5 @@ pip install -r requirements.txt
 # Collect static files
 python manage.py collectstatic --noinput
 
-# Run migrations (optional - comment out if using external DB)
-# python manage.py migrate --noinput
+# Run migrations
+python manage.py migrate --noinput
