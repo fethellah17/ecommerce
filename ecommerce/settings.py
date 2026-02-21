@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-^m=_%s7!d*73o6xjv^h*xqyew_0us4$^+-lu6_x93m_y-))$y7
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -117,6 +117,8 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
 STATICFILES_DIRS = os.path.join(BASE_DIR, 'static'),
 
 # Media files (uploads)
@@ -124,7 +126,3 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# Login settings
-LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'store'
